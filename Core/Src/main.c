@@ -106,21 +106,112 @@ int main(void)
   MX_UART4_Init();
   /* USER CODE BEGIN 2 */
 
+  uint16_t SAMPLE_RATE = 16000;		//samples/second
+  uint16_t AUDIO_DURATION = 15;		//seconds
+  float PI = 3.14159;
+
+  double AMPLITUDE = 0X2000;
+  const double ONE_HZ = 2 * PI / SAMPLE_RATE; //Digital frequency equivalent to 1 Hz -- units of cycles/sample
+  volatile int16_t sample; //actually 32 bits long, not sure why
+  int i = 0;
+  int i_max = SAMPLE_RATE * AUDIO_DURATION; //number of samples to be generated in file
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-    /* USER CODE END WHILE */
-	HAL_UART_Transmit(&huart4, (uint8_t *)&tx_data, 1, HAL_MAX_DELAY);
-	tx_data++;
-	printf("Transmitted: %d.\r\n", tx_data);
-  // Delay 1s
-  HAL_Delay(1000);
+
+  if (i == 0) {
+	  printf("Starting data transmission.\r\n");
+
+	  //send start character
+	  tx_data = 0xFF;
+	  HAL_UART_Transmit(&huart4, (uint8_t *)&tx_data, 1, HAL_MAX_DELAY);
+	  HAL_UART_Transmit(&huart4, (uint8_t *)&tx_data, 1, HAL_MAX_DELAY);
+	  HAL_UART_Transmit(&huart4, (uint8_t *)&tx_data, 1, HAL_MAX_DELAY);
+	  tx_data = 0xEE;
+	  HAL_UART_Transmit(&huart4, (uint8_t *)&tx_data, 1, HAL_MAX_DELAY);
+
+  }
+
+  i++;
+  //i = i_max+1;
+  if (i <= i_max && i != 0) {
+
+	  //sine waves at 262, 330, 392Hz
+	  //values of sample must be between -0x8000 and 0x7999
+	  sample = 0;
+	  sample += AMPLITUDE * sin(i * ONE_HZ * 262 * 2);
+	  sample += AMPLITUDE * sin(i * ONE_HZ * 330 * 2);
+	  sample += AMPLITUDE * sin(i * ONE_HZ * 392 * 2);
+	  //printf("Sample is: %d or 0x%x\t\r\n", sample, sample);
+
+	  //debug only -- check logic for escape char in data detection
+	  //sample = -2;
+	  //printf("sample is: 0x%x\r\n", sample);
+	  //printf("last 16 bits: 0x%x\r\n", sample & 0xFFFF);
+	  //printf("checked against mask: 0x%x\r\n", (sample & 0xFFFF) ^ 0xFFFF);
+
+	  //send escape char twice to indicate escape char value is being sent
+	  if (!((sample & 0xFFFF) ^ 0xFFFF)) {
+
+		  //send 0xFFFF twice to
+		  tx_data = 0xFF;
+		  HAL_UART_Transmit(&huart4, (uint8_t *)&tx_data, 1, HAL_MAX_DELAY);
+		  HAL_UART_Transmit(&huart4, (uint8_t *)&tx_data, 1, HAL_MAX_DELAY);
+		  HAL_UART_Transmit(&huart4, (uint8_t *)&tx_data, 1, HAL_MAX_DELAY);
+		  HAL_UART_Transmit(&huart4, (uint8_t *)&tx_data, 1, HAL_MAX_DELAY);
+
+		  //printf("sample is: 0x%x\r\n", sample); //debug only
+		  //printf("sending 0xffff\r\n"); //debug only
+	  }
+	  else { //send data normally
+
+		  //say sample = 0x1234;
+
+		  //transmit first 8 bits
+		  tx_data = sample >> 8;     // high byte (0x12)
+		  HAL_UART_Transmit(&huart4, (uint8_t *)&tx_data, 1, HAL_MAX_DELAY);
+		  //printf("Sent as: %x\t", tx_data); //debug only
+
+		  //transmit last 8 bits
+		  tx_data = sample & 0x00FF; // low byte (0x34)
+		  HAL_UART_Transmit(&huart4, (uint8_t *)&tx_data, 1, HAL_MAX_DELAY);
+		  //printf("%x\r\n", tx_data); //debug only
+	  }
+
+	  //HAL_Delay(1000); //debug only
+  }
+  else { //end of file, send end of file char after escape char
+
+	  //send escape character (0xFFFF)
+	  tx_data = 0xFF;
+	  HAL_UART_Transmit(&huart4, (uint8_t *)&tx_data, 1, HAL_MAX_DELAY);
+	  tx_data = 0xFF;
+	  HAL_UART_Transmit(&huart4, (uint8_t *)&tx_data, 1, HAL_MAX_DELAY);
+
+	  //send end of file character (0xFFFE)
+	  tx_data = 0xFF;
+	  HAL_UART_Transmit(&huart4, (uint8_t *)&tx_data, 1, HAL_MAX_DELAY);
+	  tx_data = 0xFE;
+	  HAL_UART_Transmit(&huart4, (uint8_t *)&tx_data, 1, HAL_MAX_DELAY);
+
+	  //reset counter
+	  i = 0;
+
+	  //delay for viewing
+	  printf("All data sent.\r\n");
+	  HAL_Delay(1000);
+
+  }
+  /* USER CODE END WHILE */
 
 
-    /* USER CODE BEGIN 3 */
+
+
+  /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */
 }
