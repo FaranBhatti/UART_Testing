@@ -124,7 +124,7 @@ int main(void)
   {
 
   if (i == 0) {
-	  printf("Starting data transmission.");
+	  printf("Starting data transmission.\r\n");
 
 	  //send start character
 	  tx_data = 0xFF;
