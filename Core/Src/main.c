@@ -106,7 +106,7 @@ int main(void)
   MX_UART4_Init();
   /* USER CODE BEGIN 2 */
 
-  uint16_t SAMPLE_RATE = 16000;		//samples/second
+  uint16_t SAMPLE_RATE = 8000;		//samples/second
   uint16_t AUDIO_DURATION = 15;		//seconds
   float PI = 3.14159;
 
@@ -206,12 +206,9 @@ int main(void)
 	  HAL_Delay(1000);
 
   }
-  /* USER CODE END WHILE */
+    /* USER CODE END WHILE */
 
-
-
-
-  /* USER CODE BEGIN 3 */
+    /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */
 }
@@ -294,7 +291,7 @@ static void MX_UART4_Init(void)
 
   /* USER CODE END UART4_Init 1 */
   huart4.Instance = UART4;
-  huart4.Init.BaudRate = 115200;
+  huart4.Init.BaudRate = 430000;
   huart4.Init.WordLength = UART_WORDLENGTH_8B;
   huart4.Init.StopBits = UART_STOPBITS_1;
   huart4.Init.Parity = UART_PARITY_NONE;
